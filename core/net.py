@@ -58,7 +58,8 @@ class AgeGenderNet(nn.Module):
     def forward(self, x):
         x = self.conv_layer(x)
         x = self.global_max_pooling(x)
-        x = x.view(-1, 196)
+        #x = x.view(-1, 196)
+        x = x.view(x.size(0), -1)
         age = self.age_fc_layers(x)
         gender = self.gender_fc_layers(x)
 

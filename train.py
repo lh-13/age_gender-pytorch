@@ -12,20 +12,38 @@ import torch.optim as optim
 import torch.backends.cudnn as cudnn  
 from core.dataset import Dataset  
 from core.net import AgeGenderNet
+from core.resnet import resnet18, resnet34 
+import os   
 
 if __name__ == "__main__":
-    cuda = False     #是否使用cuda 
+    cuda = True     #是否使用cuda 
     trainset = Dataset("./data/dataset/UTKFace/cropAlignFace/UTKFace")
     num_dataset = len(trainset)
     dataloader = DataLoader(trainset, batch_size=4, num_workers=0, shuffle=True)
     writer = SummaryWriter(log_dir='log')
 
     #创建模型
-    model = AgeGenderNet()
-    
-    num_epochs = 50 
+    #model = AgeGenderNet()
+    model = resnet18()
+
+    #加载预训练模型
+    model_path = ""
+    if os.path.exists(model_path):
+        print('Loading {} weights into state dict...'.format(model_path))
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        model_dict = model.state_dict()
+        pretrained_dict = torch.load(model_path, map_location=device)
+        pretrained_dict = {k: v for k, v in pretrained_dict.items() if np.shape(model_dict[k]) == np.shape(v)}
+        model_dict.update(pretrained_dict)
+        model.load_state_dict(model_dict)
+        print('pretrained load finished !!!!!!')
+    else:
+        print('not load pretrained!!!!!')
+
+
+    num_epochs = 300 
     #optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
-    optimizer = optim.Adam(model.parameters(), lr=0.01)
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     net = model.train()
     if cuda:
@@ -35,7 +53,7 @@ if __name__ == "__main__":
         net = net.cuda()
 
     #损失函数
-    mse_loss = nn.MSELoss()
+    mse_loss = nn.MSELoss()    #均方损失函数
     cross_loss = nn.CrossEntropyLoss()
 
     for epoch in range(num_epochs):
