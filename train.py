@@ -19,7 +19,7 @@ if __name__ == "__main__":
     cuda = True     #是否使用cuda 
     trainset = Dataset("./data/dataset/UTKFace/cropAlignFace/UTKFace")
     num_dataset = len(trainset)
-    dataloader = DataLoader(trainset, batch_size=4, num_workers=0, shuffle=True)
+    dataloader = DataLoader(trainset, batch_size=8, num_workers=0, shuffle=True)
     writer = SummaryWriter(log_dir='log')
 
     #创建模型
@@ -27,21 +27,23 @@ if __name__ == "__main__":
     model = resnet18()
 
     #加载预训练模型
-    model_path = ""
+    model_path = "./checkpoint/Epoch100-train_loss-0.0068.pth——1"
     if os.path.exists(model_path):
         print('Loading {} weights into state dict...'.format(model_path))
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        model_dict = model.state_dict()
-        pretrained_dict = torch.load(model_path, map_location=device)
-        pretrained_dict = {k: v for k, v in pretrained_dict.items() if np.shape(model_dict[k]) == np.shape(v)}
-        model_dict.update(pretrained_dict)
-        model.load_state_dict(model_dict)
+        # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        # model_dict = model.state_dict()
+        # pretrained_dict = torch.load(model_path, map_location=device)
+        # pretrained_dict = {k: v for k, v in pretrained_dict.items() if np.shape(model_dict[k]) == np.shape(v)}
+        # model_dict.update(pretrained_dict)
+        # model.load_state_dict(model_dict)
+        params = torch.load(model_path)   #加载参数
+        model.load_state_dict(params)
         print('pretrained load finished !!!!!!')
     else:
         print('not load pretrained!!!!!')
 
 
-    num_epochs = 300 
+    num_epochs = 200 
     #optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
@@ -82,10 +84,12 @@ if __name__ == "__main__":
         if (epoch % 10 == 0):
             model.eval()
             torch.save(model, 'checkpoint/Epoch%d-train_loss-%.4f.pth'%(epoch, train_loss))
+            torch.save(model.state_dict(), 'checkpoint/Epoch%d-train_loss-%.4f_state_dict.pth'%(epoch, train_loss))
 
     #save model 
     model.eval() 
     torch.save(model, 'checkpoint/age_gender_model.pt')
+    torch.save(model.state_dict(), 'checkpoint/age_gender_model_state_dict_pth')
 
 
 
